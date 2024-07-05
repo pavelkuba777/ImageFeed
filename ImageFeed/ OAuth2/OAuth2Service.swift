@@ -10,66 +10,53 @@ import Foundation
 final class OAuth2Service {
     
     static let shared = OAuth2Service()
+    private var task: URLSessionTask?
     
-    private let urlSession = URLSession.shared
+    private init(){}
     
-    private (set) var authToken: String? {
-        get {
-            return OAuth2TokenStorage().token
+    private func oauthTokenRequest(code: String) -> URLRequest? {
+        var urlComponents = URLComponents(string: "https://unsplash.com/oauth/token")
+        urlComponents?.queryItems = [
+            URLQueryItem(name: "client_id", value: Constants.accessKey),
+            URLQueryItem(name: "client_secret", value: Constants.secretKey),
+            URLQueryItem(name: "redirect_uri", value: Constants.redirectURI),
+            URLQueryItem(name: "code", value: code),
+            URLQueryItem(name: "grant_type", value: Constants.grantType)
+        ]
+        
+        guard let urlRequest = urlComponents?.url else {
+            print("URL")
+            return nil
         }
-        set {
-            OAuth2TokenStorage().token = newValue
-        }
+        
+        var request = URLRequest(url: urlRequest)
+        request.httpMethod = "POST"
+        
+        return request
     }
     
     func fetchOAuthToken(_ code: String, completion: @escaping (Result<String, Error>) -> Void) {
-        guard let request = authTokenRequest(code: code) else {
-            fatalError("Unable to create fetch authorization token request")
+        guard let request = oauthTokenRequest(code: code) else {
+            completion(.failure(NetworkError.urlSessionError))
+            return
         }
-        let task = object(for: request) { [weak self] result in
-            guard let self = self else { return }
-            switch result {
-            case .success(let body):
-                let authToken = body.accessToken
-                self.authToken = authToken
-                completion(.success(authToken))
+        task = URLSession.shared.data(for: request) { result in
+            switch result{
+            case .success(let data):
+                do {
+                    let responseToken = try JSONDecoder().decode(OAuthTokenResponseBody.self, from: data)
+                    OAuth2TokenStorage.shared.token = responseToken.accessToken
+                    completion(.success(responseToken.accessToken))
+                } catch {
+                    completion(.failure(error))
+                    print("Error decoding token response: ", error)
+                }
             case .failure(let error):
                 completion(.failure(error))
+                print("Network error: ", error)
             }
         }
-        task.resume()
-    }
-}
-
-extension OAuth2Service {
-    private func object(
-        for request: URLRequest,
-        completion: @escaping (Result<OAuthTokenResponseBody, Error>) -> Void
-    ) -> URLSessionTask {
-        let decoder = JSONDecoder()
-        return urlSession.data(for: request) { (result: Result<Data, Error>) in
-            let response = result.flatMap { data -> Result<OAuthTokenResponseBody, Error> in
-                Result { try decoder.decode(OAuthTokenResponseBody.self, from: data) }
-            }
-            completion(response)
-        }
+        task?.resume()
     }
     
-    func authTokenRequest(code: String) -> URLRequest? {
-        guard let url = URL(string: "https://unsplash.com"),
-              let request = URLRequest.makeHTTPRequest(
-                path: "/oauth/token"
-                + "?client_id=\(accessKey)"
-                + "&&client_secret=\(secretKey)"
-                + "&&redirect_uri=\(redirectURI)"
-                + "&&code=\(code)"
-                + "&&grant_type=authorization_code",
-                httpMethod: "POST",
-                baseURL: url)
-        else {
-            return nil
-        }
-        return request
-    }
 }
-

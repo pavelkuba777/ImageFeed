@@ -87,7 +87,6 @@
 		F06AE2E22BE78E4F008E93DD /* ImageFeed */ = {
 			isa = PBXGroup;
 			children = (
-				F0B46BE52C31D846003F81B8 /* URLSession+data.swift */,
 				F06AE2E32BE78E4F008E93DD /* AppDelegate.swift */,
 				F06AE2E52BE78E4F008E93DD /* SceneDelegate.swift */,
 				F0FBAB702C2B04AA00FD7D32 /* Constants.swift */,
@@ -126,7 +125,6 @@
 			children = (
 				F0B46BE02C31B0CA003F81B8 /* AuthViewController.swift */,
 				F0B46BE32C31B369003F81B8 /* WebViewViewController.swift */,
-				F0B46BEF2C320ECC003F81B8 /* OAuthTokenResponseBody.swift */,
 			);
 			path = AuthView;
 			sourceTree = "<group>";
@@ -144,6 +142,8 @@
 			children = (
 				F0B46BE92C3203DD003F81B8 /* OAuth2TokenStorage.swift */,
 				F0B46BE72C3203BD003F81B8 /* OAuth2Service.swift */,
+				F0B46BEF2C320ECC003F81B8 /* OAuthTokenResponseBody.swift */,
+				F0B46BE52C31D846003F81B8 /* URLSession+data.swift */,
 			);
 			path = " OAuth2";
 			sourceTree = "<group>";

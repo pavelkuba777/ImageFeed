@@ -27,14 +27,17 @@ extension URLSession {
         let task = dataTask(with: request, completionHandler: { data, response, error in
             if let data = data, let response = response, let statusCode = (response as? HTTPURLResponse)?.statusCode {
                 if 200 ..< 300 ~= statusCode {
-                    fulfillCompletionOnTheMainThread(.success(data)) // 3
+                    fulfillCompletionOnTheMainThread(.success(data))
                 } else {
                     fulfillCompletionOnTheMainThread(.failure(NetworkError.httpStatusCode(statusCode)))
+                    print("httpStatusCode error")
                 }
             } else if let error = error {
                 fulfillCompletionOnTheMainThread(.failure(NetworkError.urlRequestError(error)))
+                print("urlRequest error")
             } else {
                 fulfillCompletionOnTheMainThread(.failure(NetworkError.urlSessionError))
+                print("urlSession error")
             }
         })
         
@@ -46,7 +49,7 @@ extension URLRequest {
     static func makeHTTPRequest(
         path: String,
         httpMethod: String,
-        baseURL: URL = defaultBaseURL
+        baseURL: URL = Constants.defaultBaseURL
     ) -> URLRequest? {
         guard let url = URL(string: path, relativeTo: baseURL) else {
             return nil

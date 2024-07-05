@@ -7,24 +7,16 @@
 
 import Foundation
 
-protocol OAuth2TokenStorageProtocol {
-    var token: String? { get set }
-}
-
-private enum Keys: String {
-    case token
-}
-
-final class OAuth2TokenStorage: OAuth2TokenStorageProtocol {
-    
-    let userDefaults = UserDefaults.standard
+final class OAuth2TokenStorage {
+    static let shared = OAuth2TokenStorage()
+    private let tokenKey = "OAuth2AccessToken"
     
     var token: String? {
         get {
-            return userDefaults.string(forKey: Keys.token.rawValue)
+            return UserDefaults.standard.string(forKey: tokenKey)
         }
         set {
-            userDefaults.set(newValue, forKey: Keys.token.rawValue)
+            UserDefaults.standard.set(newValue, forKey: tokenKey)
         }
     }
 }

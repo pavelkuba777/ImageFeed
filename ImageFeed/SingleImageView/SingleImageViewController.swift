@@ -31,13 +31,13 @@ final class SingleImageViewController: UIViewController {
     }
     
     // MARK: - Lifecycle
-
+    
     override func viewDidLoad() {
-      super.viewDidLoad()
-      imageView.image = image
-      setupScrollView()
-      guard let image else { return }
-      rescaleAndCenterImageInScrollView(image: image)
+        super.viewDidLoad()
+        imageView.image = image
+        setupScrollView()
+        guard let image else { return }
+        rescaleAndCenterImageInScrollView(image: image)
     }
     
     // MARK: - Actions
@@ -53,7 +53,6 @@ final class SingleImageViewController: UIViewController {
         self.present(shareViewController, animated: true)
     }
 }
-
 
 // MARK: - Private methods
 private extension SingleImageViewController {
