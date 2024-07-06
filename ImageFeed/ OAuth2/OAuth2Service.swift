@@ -25,7 +25,7 @@ final class OAuth2Service {
         ]
         
         guard let urlRequest = urlComponents?.url else {
-            print("URL")
+            print("URL for authToken is not formed correctly.")
             return nil
         }
         
