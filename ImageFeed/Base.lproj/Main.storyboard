@@ -227,11 +227,12 @@
                                 <constraints>
                                     <constraint firstAttribute="height" constant="48" id="7Pj-hx-eq5"/>
                                 </constraints>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="17"/>
                                 <color key="tintColor" name="YP Black"/>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" title="Войти">
-                                    <fontDescription key="titleFontDescription" type="boldSystem" pointSize="17"/>
-                                </buttonConfiguration>
+                                <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
+                                <state key="normal" title="Войти">
+                                    <color key="titleColor" name="YP Black"/>
+                                </state>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
                                         <integer key="value" value="16"/>
@@ -262,6 +263,9 @@
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="frj-VW-X5r"/>
+                    <connections>
+                        <outlet property="loginButton" destination="B4x-H0-Snh" id="gfL-oL-k9x"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2Mp-jm-z3l" sceneMemberID="firstResponder"/>
             </objects>

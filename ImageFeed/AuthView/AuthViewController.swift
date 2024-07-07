@@ -16,6 +16,13 @@ final class AuthViewController: UIViewController {
     
     weak var delegate: AuthViewControllerDelegate?
     
+    @IBOutlet weak var loginButton: UIButton!
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        loginButton.titleLabel?.font = UIFont.systemFont(ofSize: 17, weight: .bold)
+    }
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == showWebViewSegueIdentifier {
             guard let webViewViewController = segue.destination as? WebViewViewController
