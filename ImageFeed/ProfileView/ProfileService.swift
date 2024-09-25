@@ -16,12 +16,12 @@ struct Profile {
 
 final class ProfileService {
     static let shared = ProfileService()
-
+    
     var lastToken: String?
     var task: URLSessionTask?
-
+    
     private(set) var profile: Profile?
-
+    
     private enum ProfileServiceConstants {
         static let unsplashUserProfileURLString = "\(Constants.defaultBaseURL)/me"
     }
@@ -31,7 +31,7 @@ final class ProfileService {
         let lastName: String?
         let bio: String?
         let email: String
-
+        
         enum CodingKeys: String, CodingKey {
             case username
             case firstName = "first_name"
@@ -40,21 +40,21 @@ final class ProfileService {
             case email
         }
     }
-
+    
     private init() {}
-
+    
     func fetchProfile(_ token: String, completion: @escaping (Result<Void, NetworkError>) -> Void) {
         assert(Thread.isMainThread)
-
+        
         task?.cancel()
-
+        
         guard let request = makeProfileInfoRequest(token: token)
         else {
             print("\(#file):\(#function):\(NetworkError.invalidRequest.description)")
             completion(.failure(NetworkError.invalidRequest))
             return
         }
-
+        
         let task = URLSession.shared.objectTask(for: request) {[weak self] (result: Result<ProfileResultBody, NetworkError>) in
             DispatchQueue.main.async {
                 guard let self else { return }
@@ -76,7 +76,7 @@ final class ProfileService {
         }
         task.resume()
     }
-
+    
     private func makeProfileInfoRequest(token: String) -> URLRequest? {
         guard let url = URL(string: ProfileServiceConstants.unsplashUserProfileURLString)
         else {

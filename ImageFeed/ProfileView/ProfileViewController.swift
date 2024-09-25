@@ -102,10 +102,10 @@ final class ProfileViewController: UIViewController {
     
     func setupProfilePhotoImage() {
         let imageSize = 70.0
-                let profileImage = UIImage(resource: .photo)
+        let profileImage = UIImage(resource: .photo)
         profilePhotoImage.image = profileImage
         profilePhotoImage.translatesAutoresizingMaskIntoConstraints = false
-                view.addSubview(profilePhotoImage)
+        view.addSubview(profilePhotoImage)
         profilePhotoImage.widthAnchor.constraint(equalToConstant: imageSize).isActive = true
         profilePhotoImage.heightAnchor.constraint(equalToConstant: imageSize).isActive = true
         profilePhotoImage.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16).isActive = true

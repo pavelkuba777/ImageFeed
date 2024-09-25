@@ -13,7 +13,7 @@ protocol AlertPresenterDelegate: AnyObject {
 
 final class AlertPresenter {
     weak var delegate: AlertPresenterDelegate?
-
+    
     func showAlert() {
         let alert = UIAlertController(title: "Что-то пошло не так(",
                                       message: "Не удалось войти в систему",

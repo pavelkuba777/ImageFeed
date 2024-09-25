@@ -46,18 +46,18 @@ final class SplashViewController: UIViewController {
             assertionFailure("Invalid window configuration")
             return
         }
-            window.rootViewController = TabBarController()
-        }
+        window.rootViewController = TabBarController()
+    }
     
-        
-        private func setupLogo() {
-            let launchLogoImage = UIImage(resource: .launchLogo)
-            launchLogoImageView.image = launchLogoImage
-            launchLogoImageView.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(launchLogoImageView)
-            launchLogoImageView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor).isActive = true
-            launchLogoImageView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
-        }
+    
+    private func setupLogo() {
+        let launchLogoImage = UIImage(resource: .launchLogo)
+        launchLogoImageView.image = launchLogoImage
+        launchLogoImageView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(launchLogoImageView)
+        launchLogoImageView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor).isActive = true
+        launchLogoImageView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
+    }
 }
 
 
@@ -85,15 +85,15 @@ extension SplashViewController: AuthViewControllerDelegate {
             }
         }
     }
-
-
+    
+    
     func didAuthenticate(_ vc: AuthViewController) {
         vc.dismiss(animated: true)
         guard let token = storage.loadToken()
-                else {
-                    print("\(#file):\(#function): authorization token was not found")
-                    return
-                }
-                fetchProfile(token)
-            }
+        else {
+            print("\(#file):\(#function): authorization token was not found")
+            return
         }
+        fetchProfile(token)
+    }
+}
