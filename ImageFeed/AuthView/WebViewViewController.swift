@@ -13,20 +13,62 @@ protocol WebViewViewControllerDelegate: AnyObject {
 }
 
 final class WebViewViewController: UIViewController {
-    @IBOutlet private var webView: WKWebView!
-    @IBOutlet private var progressView: UIProgressView!
     
     weak var delegate: WebViewViewControllerDelegate?
+    private let webView = WKWebView()
+    private let progressView = UIProgressView(progressViewStyle: .default)
+    private var estimatedProgressObservation: NSKeyValueObservation?
+    
+    private enum WebViewConstants {
+        static let unsplashAuthorizeURLString = "https://unsplash.com/oauth/authorize"
+    }
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        loadAuthView()
+        view.backgroundColor = UIColor(resource: .ypWhite)
         webView.navigationDelegate = self
+        createWebView()
+        configureBackButton()
+        createProgressView()
+        loadAuthView()
     }
     
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        estimatedProgressObservation = webView.observe(\.estimatedProgress, options: []) { [weak self] _, _ in
+            guard let self = self else { return }
+            self.updateProgress()}
+    }
+    
+    
+    private func updateProgress() {
+        progressView.setProgress(Float(webView.estimatedProgress), animated: true)
+        progressView.isHidden = fabs(webView.estimatedProgress - 1.0) <= 0.0001
+        if progressView.isHidden {
+            progressView.setProgress(0.0, animated: false)
+        }
+    }
+    
+    private func configureBackButton() {
+        let backButton = UIBarButtonItem(image: UIImage(resource: .backward),
+                                         style: .plain,
+                                         target: self,
+                                         action: #selector(didTapBackButton))
+        backButton.tintColor = UIColor(resource: .ypBlack)
+        navigationItem.leftBarButtonItem = backButton
+    }
+    
+    @objc
+    func didTapBackButton() {
+        delegate?.webViewViewControllerDidCancel(self)
+    }
+    
+    
     private func loadAuthView() {
-        guard var urlComponents = URLComponents(string: Constants.unsplashAuthorizeURLString) else {
-            print("Failed to create urlComponents")
+        guard var urlComponents = URLComponents(string: WebViewConstants.unsplashAuthorizeURLString) else {
+            print("\(#file):\(#function): Can not create urlComponents with string \(WebViewConstants.unsplashAuthorizeURLString)")
             return
         }
         
@@ -38,7 +80,7 @@ final class WebViewViewController: UIViewController {
         ]
         
         guard let url = urlComponents.url else {
-            print("Failed to create urlComponents")
+            print("\(#file):\(#function): Can not found url in \(urlComponents)")
             return
         }
         
@@ -46,37 +88,37 @@ final class WebViewViewController: UIViewController {
         webView.load(request)
     }
     
-    @IBAction private func didTapBackButton(_ sender: Any?) {
-        delegate?.webViewViewControllerDidCancel(self)
+    
+    private func createWebView() {
+        webView.translatesAutoresizingMaskIntoConstraints = false
+        webView.backgroundColor = UIColor(resource: .ypWhite)
+        view.addSubview(webView)
+        webView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        webView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
     }
     
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        webView.addObserver(
-            self,
-            forKeyPath: #keyPath(WKWebView.estimatedProgress),
-            options: .new,
-            context: nil)
-        updateProgress()
+    private func createProgressView() {
+        progressView.translatesAutoresizingMaskIntoConstraints = false
+        progressView.progressTintColor = UIColor(resource: .ypBlack)
+        view.addSubview(progressView)
+        progressView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor).isActive = true
+        progressView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor).isActive = true
+        progressView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), context: nil)
-    }
-    
-    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-        if keyPath == #keyPath(WKWebView.estimatedProgress) {
-            updateProgress()
+    private func code(from navigationAction: WKNavigationAction) -> String? {
+        if
+            let url = navigationAction.request.url,
+            let urlComponents = URLComponents(string: url.absoluteString),
+            urlComponents.path == "/oauth/authorize/native",
+            let items = urlComponents.queryItems,
+            let codeItem = items.first(where: { $0.name == "code" })
+        {
+            return codeItem.value
         } else {
-            super.observeValue(forKeyPath: keyPath, of: object, change: change, context: context)
+            return nil
         }
-    }
-    
-    private func updateProgress() {
-        progressView.progress = Float(webView.estimatedProgress)
-        progressView.isHidden = fabs(webView.estimatedProgress - 1.0) <= 0.0001
     }
 }
 
@@ -91,20 +133,6 @@ extension WebViewViewController: WKNavigationDelegate {
             decisionHandler(.cancel)
         } else {
             decisionHandler(.allow)
-        }
-    }
-    
-    private func code(from navigationAction: WKNavigationAction) -> String? {
-        if
-            let url = navigationAction.request.url,
-            let urlComponents = URLComponents(string: url.absoluteString),
-            urlComponents.path == "/oauth/authorize/native",
-            let items = urlComponents.queryItems,
-            let codeItem = items.first(where: { $0.name == "code" })
-        {
-            return codeItem.value
-        } else {
-            return nil
         }
     }
 }

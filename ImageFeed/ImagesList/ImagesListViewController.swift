@@ -3,94 +3,79 @@ import Foundation
 
 final class ImagesListViewController: UIViewController {
     
-    // MARK: - Outlets
-    
-    @IBOutlet private var tableView: UITableView!
-    
-    // MARK: - Private properties
-    
-    private let photosName: [String] = Array(0..<20).map { "\($0)" }
-    private let showSingleImageSegueIdentifier = "ShowSingleImage"
-    
-    private lazy var dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .long
-        formatter.timeStyle = .none
-        return formatter
-    }()
-    
-    // MARK: - Public properties
-    
-    override var preferredStatusBarStyle: UIStatusBarStyle {
-        return .lightContent
-    }
-    
-    // MARK: - Lifecycle
-    
+    private let photosName = Array(0..<20).map{ "\($0)" }
+        private let currentDate = Date()
+        private let singleImageView = SingleImageViewController()
+        private let imagesTableView = UITableView(frame: .zero, style: UITableView.Style.plain)
+
+        private lazy var dateFormatter: DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .long
+            formatter.timeStyle = .none
+            formatter.locale = Locale(identifier: "ru_RU")
+            return formatter
+        }()
+
     override func viewDidLoad() {
-        super.viewDidLoad()
-        setupTableView()
-    }
-    // MARK: - public methods
+           super.viewDidLoad()
+        createTableView()
+                singleImageView.modalPresentationStyle = .fullScreen
+                imagesTableView.register(ImagesListCell.self, forCellReuseIdentifier: ImagesListCell.reuseIdentifier)
+                imagesTableView.separatorStyle = .none
+            }
     
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == showSingleImageSegueIdentifier {
-            guard
-                let viewController = segue.destination as? SingleImageViewController,
-                let indexPath = sender as? IndexPath
-            else {
-                super.prepare(for: segue, sender: sender)
+    private func createTableView() {
+            imagesTableView.translatesAutoresizingMaskIntoConstraints = false
+            imagesTableView.backgroundColor = UIColor(resource: .ypBlack)
+            view.addSubview(imagesTableView)
+            imagesTableView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+            imagesTableView.heightAnchor.constraint(equalTo: view.heightAnchor).isActive = true
+            imagesTableView.delegate = self
+            imagesTableView.dataSource = self
+            imagesTableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 12, right: 0)
+        }
+
+        private func configCell(for cell: ImagesListCell, with indexPath: IndexPath) {
+            guard let image = UIImage(named: photosName[indexPath.row]) else {
                 return
             }
-            let image = UIImage(named: photosName[indexPath.row])
-            viewController.image = image
-        } else {
-            super.prepare(for: segue, sender: sender)
+            cell.contentImage.image = image
+            cell.dateStamp.text = dateFormatter.string(from: currentDate)
+            let likeImage = indexPath.row % 2 == 0 ? UIImage(named: "like_on") : UIImage(named: "like_off")
+            cell.likeButton.setImage(likeImage, for: .normal)
+            cell.addGradientIfNeeded()
         }
-    }
 }
 
-// MARK: - private methods
-
-private extension ImagesListViewController {
-    func setupTableView() {
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.contentInset = UIEdgeInsets(top: 12, left: 0, bottom: 0, right: 0)
-    }
-}
-
-// MARK: - UITableViewDelegate
-
-extension ImagesListViewController: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        performSegue(withIdentifier: showSingleImageSegueIdentifier, sender: indexPath)
-    }
-}
-
-// MARK: - UITableViewDataSource
 
 extension ImagesListViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        photosName.count
+        return photosName.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(
-            withIdentifier: ImagesListCell.reuseIdentifier,
-            for: indexPath
-        ) as? ImagesListCell else {
+        let cell = tableView.dequeueReusableCell(withIdentifier: ImagesListCell.reuseIdentifier, for: indexPath)
+        
+        guard let imageListCell = cell as? ImagesListCell else {
             return UITableViewCell()
         }
-        
-        let image = UIImage(named: photosName[indexPath.row])
-        let date = dateFormatter.string(from: Date())
-        let isLiked = indexPath.row % 2 == 0
-        
-        cell.config(image: image, date: date, isLiked: isLiked)
-        
-        return cell
+        configCell(for: imageListCell, with: indexPath)
+        return imageListCell
+            }
+
+            func numberOfSections(in tableView: UITableView) -> Int {
+                return 1
+            }
+        }
+
+
+extension ImagesListViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        guard let image = UIImage(named: photosName[indexPath.row]) else {
+            return
+        }
+        singleImageView.image = image
+        present(singleImageView, animated: true)
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -99,10 +84,8 @@ extension ImagesListViewController: UITableViewDataSource {
         }
         let imageInsets = UIEdgeInsets(top: 4, left: 16, bottom: 4, right: 16)
         let imageViewWidth = tableView.bounds.width - imageInsets.left - imageInsets.right
-        let imageWidth = image.size.width
-        let scale = imageViewWidth / imageWidth
+        let scale = imageViewWidth / image.size.width
         let cellHeight = image.size.height * scale + imageInsets.top + imageInsets.bottom
-        return cellHeight
-    }
-}
-
+        return ceil(cellHeight)
+            }
+        }

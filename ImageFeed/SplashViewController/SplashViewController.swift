@@ -7,88 +7,93 @@
 
 import Foundation
 import UIKit
+import ProgressHUD
 
 final class SplashViewController: UIViewController {
     
-    // MARK: - Private properties
+    private let launchLogoImageView = UIImageView()
     
-    private let showAuthenticationScreenSegueIdentifier = "ShowAuthenticationScreen"
-    private let oauth2Service = OAuth2Service.shared
-    private let oauth2TokenStorage = OAuth2TokenStorage()
+    private let storage = OAuth2TokenStorage()
     
-    // MARK: - Public properties
+    private let authViewController = AuthViewController()
+    private let authNavigationontroller = UINavigationController()
     
-    override var preferredStatusBarStyle: UIStatusBarStyle {
-        .lightContent
+    private let profileService = ProfileService.shared
+    private let profileImageService = ProfileImageService.shared
+    
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        authNavigationontroller.viewControllers = [authViewController]
+        authNavigationontroller.modalPresentationStyle = .fullScreen
+        view.backgroundColor = UIColor(resource: .ypBlack)
+        authViewController.delegate = self
+        setupLogo()
     }
     
-    // MARK: - Lifecycle
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        
-        if oauth2TokenStorage.token != nil {
-            switchToTabBarController()
+        if let token = storage.loadToken() {
+            fetchProfile(token)
         } else {
-            performSegue(withIdentifier: showAuthenticationScreenSegueIdentifier, sender: nil)
+            present(authNavigationontroller, animated: true)
         }
     }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        setNeedsStatusBarAppearanceUpdate()
-    }
-    
-    
     
     private func switchToTabBarController() {
-        guard let window = UIApplication.shared.windows.first else { fatalError("Invalid Configuration") }
-        let tabBarController = UIStoryboard(name: "Main", bundle: .main)
-            .instantiateViewController(withIdentifier: "TabBarViewController")
-        window.rootViewController = tabBarController
-    }
+        guard let window = UIApplication.shared.windows.first else {
+            assertionFailure("Invalid window configuration")
+            return
+        }
+            window.rootViewController = TabBarController()
+        }
+    
+        
+        private func setupLogo() {
+            let launchLogoImage = UIImage(resource: .launchLogo)
+            launchLogoImageView.image = launchLogoImage
+            launchLogoImageView.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(launchLogoImageView)
+            launchLogoImageView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor).isActive = true
+            launchLogoImageView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
+        }
 }
 
-extension SplashViewController {
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == showAuthenticationScreenSegueIdentifier {
-            guard
-                let navigationController = segue.destination as? UINavigationController,
-                let viewController = navigationController.viewControllers[0] as? AuthViewController
-            else { fatalError("Failed to prepare for \(showAuthenticationScreenSegueIdentifier)") }
-            viewController.delegate = self
-        } else {
-            super.prepare(for: segue, sender: sender)
-        }
-    }
-}
 
 extension SplashViewController: AuthViewControllerDelegate {
-    func authViewController(_ vc: AuthViewController, didAuthenticateWithCode code: String) {
-        oauth2Service.fetchOAuthToken(code) { [weak self] result in
-            self?.dismiss(animated: true) { [weak self] in
-                switch result {
-                case .success:
-                    self?.switchToTabBarController()
-                case .failure:
-                    // TODO: Sprint_11
-                    break
-                }
-            }
-        }
-    }
-    
-    private func fetchAuthToken(_ code: String) {
-        oauth2Service.fetchOAuthToken(code) { [weak self] result in
-            guard let self = self else {
-                return
-            }
+    private func fetchProfile(_ token: String) {
+        UIBlockingProgressHUD.show()
+        profileService.fetchProfile(token) { [weak self] result in
+            UIBlockingProgressHUD.dismiss()
+            guard let self else { return }
             switch result {
-            case .success:
-                self.switchToTabBarController()
-            case .failure:
-                break
+            case .success():
+                if let username = profileService.profile?.username {
+                    profileImageService.fetchProfileImageURL(username, token) { result in
+                        switch result {
+                        case .success():
+                            break
+                        case .failure(let error):
+                            print("\(#file):\(#function): Cant fetch profile image URL of \(username). \(error.description)")
+                        }
+                    }
+                }
+                switchToTabBarController()
+            case .failure(let error):
+                print("\(#file):\(#function): Cant update profile info by token. \(error.description)")
             }
         }
     }
-}
+
+
+    func didAuthenticate(_ vc: AuthViewController) {
+        vc.dismiss(animated: true)
+        guard let token = storage.loadToken()
+                else {
+                    print("\(#file):\(#function): authorization token was not found")
+                    return
+                }
+                fetchProfile(token)
+            }
+        }

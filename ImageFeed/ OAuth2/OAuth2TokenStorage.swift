@@ -6,17 +6,36 @@
 //
 
 import Foundation
+import SwiftKeychainWrapper
 
 final class OAuth2TokenStorage {
-    static let shared = OAuth2TokenStorage()
-    private let tokenKey = "OAuth2AccessToken"
     
-    var token: String? {
-        get {
-            return UserDefaults.standard.string(forKey: tokenKey)
+    private let storage:UserDefaults = .standard
+    
+    private enum Keys {
+            static let authToken = "Auth token"
         }
-        set {
-            UserDefaults.standard.set(newValue, forKey: tokenKey)
+    
+    func storeToken(_ token: String) -> Bool {
+            let isSuccess = KeychainWrapper.standard.set(token, forKey: Keys.authToken)
+            guard isSuccess else {
+                print("\(#file):\(#function): Token saving failed")
+                return isSuccess
+            }
+            return isSuccess
+        }
+    
+    func loadToken() -> String? {
+        let token: String? = KeychainWrapper.standard.string(forKey: Keys.authToken)
+                return token
+            }
+    
+    func removeToken() -> Bool {
+            let isSuccess = KeychainWrapper.standard.removeObject(forKey: Keys.authToken)
+            guard isSuccess else {
+                print("\(#file):\(#function): Token removing failed")
+                return isSuccess
+            }
+            return isSuccess
         }
     }
-}
