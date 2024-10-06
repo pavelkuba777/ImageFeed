@@ -6,125 +6,155 @@
 //
 
 import UIKit
+import WebKit
+import Kingfisher
+
 
 final class ProfileViewController: UIViewController {
-    // MARK: - Private properties
+    private let storage = OAuth2TokenStorage()
     private let profilePhotoImage = UIImageView()
     private let profileFullNameLabel = UILabel()
     private let profileLoginNameLabel = UILabel()
     private let profileDescLabel = UILabel()
     private var exitButton = UIButton()
-    
-    // MARK: - Mock data
-    private let profilePhoto = "Photo"
-    private let profileUserName = "Екатерина Новикова"
-    private let profileLoginName = "@ekaterina_nov"
-    private let profileDescription = "Hello, World!"
-    
-    // MARK: - Public properties
-    
-    override var preferredStatusBarStyle: UIStatusBarStyle {
-        return .lightContent
-    }
-    
-    // MARK: - Lifecyrcle
+    private let profileService = ProfileService.shared
+    private var profileImageServiceObserver: NSObjectProtocol?
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        view.backgroundColor = UIColor(resource: .ypBlack)
         setupProfilePhotoImage()
         setupProfileFullNameLabel()
         setupProfileLoginNameLabel()
         setupProfileBioLabel()
         setupProfileExitButton()
-    }
-}
-
-// MARK: - Private methods
-
-private extension ProfileViewController {
-    @objc func didTapButton() {
+        updateProfileDetails(profile: profileService.profile)
+        
+        profileImageServiceObserver = NotificationCenter.default.addObserver(
+            forName: ProfileImageService.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            self.updateProfileImage()
+        }
+        updateProfileImage()
     }
     
+    
+    private func updateProfileImage() {
+        guard
+            let profileImageURL = ProfileImageService.shared.profileImageURL,
+            let url = URL(string: profileImageURL)
+        else { return }
+        profilePhotoImage.kf.setImage(
+            with: url,
+            placeholder: UIImage(resource: .photo)
+        ) { result in
+            switch result {
+            case .success(let value):
+                print(value.image)
+                print(value.cacheType)
+            case .failure(let error):
+                print("\(#file):\(#function): Image loading error \(error)")
+            }
+        }
+    }
+    
+    
+    private func updateProfileDetails(profile: Profile?) {
+        guard let profile = profile
+        else {
+            print("\(#file):\(#function): Can not update profile info")
+            return
+        }
+        profileFullNameLabel.text = profile.name
+        profileLoginNameLabel.text = profile.loginName
+        profileDescLabel.text = profile.bio
+        
+    }
+    
+    
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        return .lightContent
+    }
+    
+    
+    @objc func didTapButton() {
+        let isRemoved = storage.removeToken()
+        guard isRemoved else {
+            print("\(#file):\(#function): Cant remove token from storage")
+            return
+        }
+        HTTPCookieStorage.shared.removeCookies(since: Date.distantPast)
+        WKWebsiteDataStore.default().fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { records in
+            records.forEach { record in
+                WKWebsiteDataStore.default().removeData(ofTypes: record.dataTypes, for: [record], completionHandler: {})
+            }
+        }
+        guard let window = UIApplication.shared.windows.first else {
+            assertionFailure("\(#file):\(#function): Invalid window configuration")
+            return
+        }
+        window.rootViewController = SplashViewController()
+    }
+    
+    
     func setupProfilePhotoImage() {
-        profilePhotoImage.image = UIImage(named: profilePhoto)
+        let imageSize = 70.0
+        let profileImage = UIImage(resource: .photo)
+        profilePhotoImage.image = profileImage
         profilePhotoImage.translatesAutoresizingMaskIntoConstraints = false
-        
         view.addSubview(profilePhotoImage)
-        
-        NSLayoutConstraint.activate([
-            profilePhotoImage.widthAnchor.constraint(equalToConstant: 70),
-            profilePhotoImage.heightAnchor.constraint(equalToConstant: 70),
-            profilePhotoImage.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 32),
-            profilePhotoImage.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16)
-        ])
+        profilePhotoImage.widthAnchor.constraint(equalToConstant: imageSize).isActive = true
+        profilePhotoImage.heightAnchor.constraint(equalToConstant: imageSize).isActive = true
+        profilePhotoImage.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16).isActive = true
+        profilePhotoImage.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 32).isActive = true
+        profilePhotoImage.layer.cornerRadius = imageSize / 2
+        profilePhotoImage.clipsToBounds = true
     }
     
     func setupProfileFullNameLabel() {
-        profileFullNameLabel.text = profileUserName
-        profileFullNameLabel.textColor = .ypWhite
-        profileFullNameLabel.font = UIFont.systemFont(ofSize: 23, weight: .bold)
-        profileFullNameLabel.lineBreakMode = .byWordWrapping
-        profileFullNameLabel.numberOfLines = 2
-        
+        profileFullNameLabel.text = "Name"
+        profileFullNameLabel.font = UIFont(name: "SFPro-Bold", size: 23)
+        profileFullNameLabel.textColor = UIColor.ypWhite
         profileFullNameLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(profileFullNameLabel)
-        
-        NSLayoutConstraint.activate([
-            profileFullNameLabel.topAnchor.constraint(equalTo: profilePhotoImage.bottomAnchor, constant: 8),
-            profileFullNameLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-            profileFullNameLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16)
-        ])
+        profileFullNameLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16).isActive = true
+        profileFullNameLabel.topAnchor.constraint(equalTo: profilePhotoImage.bottomAnchor, constant: 8).isActive = true
     }
     
     func setupProfileLoginNameLabel() {
-        profileLoginNameLabel.text = profileLoginName
-        profileLoginNameLabel.textColor = .ypGray
-        profileLoginNameLabel.font = UIFont.systemFont(ofSize: 13, weight: .medium)
-        
+        profileLoginNameLabel.text = "@login_name"
+        profileLoginNameLabel.font = UIFont(name: "SFPro-Regular", size: 13)
+        profileLoginNameLabel.textColor = UIColor.ypGray
         profileLoginNameLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(profileLoginNameLabel)
-        
-        NSLayoutConstraint.activate([
-            profileLoginNameLabel.topAnchor.constraint(equalTo: profileFullNameLabel.bottomAnchor, constant: 8),
-            profileLoginNameLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-            profileLoginNameLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16)
-        ])
+        profileLoginNameLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16).isActive = true
+        profileLoginNameLabel.topAnchor.constraint(equalTo: profileLoginNameLabel.bottomAnchor, constant: 8).isActive = true
     }
     
     func setupProfileBioLabel() {
-        profileDescLabel.text = profileDescription
-        profileDescLabel.textColor = .ypWhite
-        profileDescLabel.font = UIFont.systemFont(ofSize: 13, weight: .medium)
-        
+        profileDescLabel.text = "Bio Info"
+        profileDescLabel.font = UIFont(name: "SFPro-Regular", size: 13)
+        profileDescLabel.textColor = UIColor.ypWhite
         profileDescLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(profileDescLabel)
-        
-        NSLayoutConstraint.activate([
-            profileDescLabel.topAnchor.constraint(equalTo: profileLoginNameLabel.bottomAnchor, constant: 8),
-            profileDescLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-            profileDescLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16)
-        ])
+        profileDescLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16).isActive = true
+        profileDescLabel.topAnchor.constraint(equalTo: profileDescLabel.bottomAnchor, constant: 8).isActive = true
     }
     
     func setupProfileExitButton() {
-        let profileExitButtonImage = UIImage(named: "Exit") ?? UIImage()
-        
-        exitButton = UIButton.systemButton(
-            with: profileExitButtonImage,
-            target: self,
-            action: #selector(self.didTapButton)
-        )
-        exitButton.tintColor = .ypRed
-        
+        exitButton.setImage(UIImage(resource: .exit), for: .normal)
         exitButton.translatesAutoresizingMaskIntoConstraints = false
+        exitButton.addTarget(self, action: #selector(didTapButton), for: .touchUpInside)
         view.addSubview(exitButton)
-        
-        NSLayoutConstraint.activate([
-            exitButton.widthAnchor.constraint(equalToConstant: 44),
-            exitButton.heightAnchor.constraint(equalToConstant: 44),
-            exitButton.centerYAnchor.constraint(equalTo: profilePhotoImage.centerYAnchor),
-            exitButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16)
-        ])
+        exitButton.widthAnchor.constraint(equalToConstant: 44.0).isActive = true
+        exitButton.heightAnchor.constraint(equalToConstant: 44.0).isActive = true
+        exitButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -14).isActive = true
+        exitButton.centerYAnchor.constraint(equalTo: profilePhotoImage.centerYAnchor).isActive = true
     }
+    
+    
+    
 }
