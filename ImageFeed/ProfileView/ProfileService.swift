@@ -43,6 +43,10 @@ final class ProfileService {
     
     private init() {}
     
+    func clearProfileInfo() {
+            profile = nil
+        }
+    
     func fetchProfile(_ token: String, completion: @escaping (Result<Void, NetworkError>) -> Void) {
         assert(Thread.isMainThread)
         
