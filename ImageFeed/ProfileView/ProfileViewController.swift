@@ -12,16 +12,19 @@ import Kingfisher
 
 final class ProfileViewController: UIViewController {
     private let storage = OAuth2TokenStorage()
+    private let alertPresenter = AlertPresenter()
     private let profilePhotoImage = UIImageView()
     private let profileFullNameLabel = UILabel()
     private let profileLoginNameLabel = UILabel()
     private let profileDescLabel = UILabel()
-    private var exitButton = UIButton()
+    private var exitButton = UIButton(type: .custom)
     private let profileService = ProfileService.shared
+    private let profileLogoutService = ProfileLogoutService.shared
     private var profileImageServiceObserver: NSObjectProtocol?
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        alertPresenter.delegate = self
         view.backgroundColor = UIColor(resource: .ypBlack)
         setupProfilePhotoImage()
         setupProfileFullNameLabel()
@@ -53,8 +56,7 @@ final class ProfileViewController: UIViewController {
         ) { result in
             switch result {
             case .success(let value):
-                print(value.image)
-                print(value.cacheType)
+                break
             case .failure(let error):
                 print("\(#file):\(#function): Image loading error \(error)")
             }
@@ -80,23 +82,16 @@ final class ProfileViewController: UIViewController {
     }
     
     
-    @objc func didTapButton() {
-        let isRemoved = storage.removeToken()
-        guard isRemoved else {
-            print("\(#file):\(#function): Cant remove token from storage")
-            return
-        }
-        HTTPCookieStorage.shared.removeCookies(since: Date.distantPast)
-        WKWebsiteDataStore.default().fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { records in
-            records.forEach { record in
-                WKWebsiteDataStore.default().removeData(ofTypes: record.dataTypes, for: [record], completionHandler: {})
-            }
-        }
-        guard let window = UIApplication.shared.windows.first else {
-            assertionFailure("\(#file):\(#function): Invalid window configuration")
-            return
-        }
-        window.rootViewController = SplashViewController()
+    @objc func didTapLogoutButton() {
+        alertPresenter.showAlert(alertType: .logoutAlert) { [weak self] in
+                   guard let self else { return }
+                   self.profileLogoutService.logout()
+                   guard let window = UIApplication.shared.windows.first else {
+                       assertionFailure("\(#file):\(#function): Invalid window configuration")
+                       return
+                   }
+                   window.rootViewController = SplashViewController()
+               }
     }
     
     
@@ -147,7 +142,7 @@ final class ProfileViewController: UIViewController {
     func setupProfileExitButton() {
         exitButton.setImage(UIImage(resource: .exit), for: .normal)
         exitButton.translatesAutoresizingMaskIntoConstraints = false
-        exitButton.addTarget(self, action: #selector(didTapButton), for: .touchUpInside)
+        exitButton.addTarget(self, action: #selector(didTapLogoutButton), for: .touchUpInside)
         view.addSubview(exitButton)
         exitButton.widthAnchor.constraint(equalToConstant: 44.0).isActive = true
         exitButton.heightAnchor.constraint(equalToConstant: 44.0).isActive = true
@@ -157,4 +152,10 @@ final class ProfileViewController: UIViewController {
     
     
     
+}
+
+extension ProfileViewController: AlertPresenterDelegate {
+    func present(_ alertToPresent: UIAlertController) {
+        present(alertToPresent, animated: true)
+    }
 }
