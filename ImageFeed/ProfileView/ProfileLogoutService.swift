@@ -10,16 +10,16 @@ import WebKit
 
 final class ProfileLogoutService {
     static let shared = ProfileLogoutService()
-
+    
     let storage = OAuth2TokenStorage()
-
+    
     private init() { }
-
+    
     func logout() {
         removeUserData()
         cleanCookies()
     }
-
+    
     private func cleanCookies() {
         HTTPCookieStorage.shared.removeCookies(since: Date.distantPast)
         WKWebsiteDataStore.default().fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { records in
@@ -28,7 +28,7 @@ final class ProfileLogoutService {
             }
         }
     }
-
+    
     private func removeUserData() {
         let isRemoved = storage.removeToken()
         guard isRemoved else {

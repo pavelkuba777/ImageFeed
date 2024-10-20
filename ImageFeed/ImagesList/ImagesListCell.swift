@@ -22,7 +22,7 @@ final class ImagesListCell: UITableViewCell {
     let dateStamp = UILabel()
     
     weak var delegate: ImagesListCellDelegate?
-
+    
     private let gradientView: UIView = UIView()
     
     static let reuseIdentifier = "ImagesListCell"
@@ -62,6 +62,7 @@ final class ImagesListCell: UITableViewCell {
     }
     
     private func createLikeButton() {
+        likeButton.accessibilityIdentifier = "LikeButton"
         likeButton.translatesAutoresizingMaskIntoConstraints = false
         likeButton.addTarget(self, action: #selector(didTapLikeButton), for: .touchUpInside)
         contentView.addSubview(likeButton)
@@ -96,12 +97,12 @@ final class ImagesListCell: UITableViewCell {
     
     
     func setLikeImage(isLiked: Bool) {
-            let likeImageState = isLiked ? UIImage.likeOn : UIImage.likeOff
-            likeButton.setImage(likeImageState, for: .normal)
-        }
-
-        override func prepareForReuse() {
-            super.prepareForReuse()
-            contentImage.kf.cancelDownloadTask()
-        }
+        let likeImageState = isLiked ? UIImage.likeOn : UIImage.likeOff
+        likeButton.setImage(likeImageState, for: .normal)
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        contentImage.kf.cancelDownloadTask()
+    }
 }

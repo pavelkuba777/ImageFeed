@@ -17,7 +17,7 @@ final class ProfileImageService {
     private(set) var profileImageURL: String?
     
     private enum ProfileImageServiceConstants {
-        static let unsplashUserPublicProfileURLString = "\(Constants.defaultBaseURL)/users/"
+        static let unsplashUserPublicProfileURLString = "\(AuthConfiguration.standard.defaultBaseURL)/users/"
     }
     
     struct UserResultBody: Decodable {
@@ -41,8 +41,8 @@ final class ProfileImageService {
     private init() {}
     
     func clearProfileImageInfo() {
-           profileImageURL = nil
-       }
+        profileImageURL = nil
+    }
     
     func fetchProfileImageURL(_ username: String, _ token: String, completion: @escaping (Result<Void, NetworkError>) -> Void) {
         assert(Thread.isMainThread)
