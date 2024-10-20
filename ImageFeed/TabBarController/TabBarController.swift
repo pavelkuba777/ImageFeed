@@ -16,15 +16,19 @@ final class TabBarController: UITabBarController {
         UITabBar.appearance().isTranslucent = false
         setupTabBar()
     }
-
+    
     func setupTabBar() {
+        let imageListPresenter = ImagesListPresenter()
         let imagesListViewController = ImagesListViewController()
+        imagesListViewController.presenter = imageListPresenter
         imagesListViewController.tabBarItem = UITabBarItem(
             title: "",
             image: UIImage(resource: .tabEditorialActive),
             selectedImage: nil
         )
+        let profilePresenter = ProfilePresenter()
         let profileViewController = ProfileViewController()
+        profileViewController.presenter = profilePresenter
         profileViewController.tabBarItem = UITabBarItem(
             title: "",
             image: UIImage(resource: .tabProfileActive),
@@ -32,5 +36,5 @@ final class TabBarController: UITabBarController {
         )
         viewControllers = [imagesListViewController, profileViewController]
     }
-
+    
 }

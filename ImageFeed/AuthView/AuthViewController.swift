@@ -20,14 +20,12 @@ final class AuthViewController: UIViewController {
     private let oAuth2Service = OAuth2Service.shared
     private let logoImageView = UIImageView()
     private let loginButton = UIButton(type: .custom)
-    private let webViewViewController = WebViewViewController()
     private let storage = OAuth2TokenStorage()
     private let alertPresenter = AlertPresenter()
     
     override func viewDidLoad() {
         view.backgroundColor = UIColor(resource: .ypBlack)
         alertPresenter.delegate = self
-        webViewViewController.delegate = self
         createProfileImageView()
         createLoginButton()
     }
@@ -44,6 +42,7 @@ final class AuthViewController: UIViewController {
     }
     
     private func createLoginButton() {
+        loginButton.accessibilityIdentifier = "Authenticate"
         loginButton.translatesAutoresizingMaskIntoConstraints = false
         loginButton.setTitleColor(.ypBlack, for: .normal)
         loginButton.setTitle("Войти", for: .normal)
@@ -59,6 +58,13 @@ final class AuthViewController: UIViewController {
     }
     
     @objc private func didTapLoginButton() {
+        let authHelper = AuthHelper()
+        let webViewPresenter = WebViewPresenter(authHelper: authHelper)
+        let webViewViewController = WebViewViewController()
+        
+        webViewViewController.presenter = webViewPresenter
+        webViewPresenter.view = webViewViewController
+        webViewViewController.delegate = self
         navigationController?.pushViewController(webViewViewController, animated: true)
     }
 }

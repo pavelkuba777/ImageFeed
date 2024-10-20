@@ -75,14 +75,14 @@ final class SingleImageViewController: UIViewController {
     
     
     private func setupStubView() {
-            stubImage.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(stubImage)
-            stubImage.image = UIImage(resource: .stub)
-            stubImage.widthAnchor.constraint(equalToConstant: 83).isActive = true
-            stubImage.heightAnchor.constraint(equalToConstant: 75).isActive = true
-            stubImage.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
-            stubImage.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        }
+        stubImage.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(stubImage)
+        stubImage.image = UIImage(resource: .stub)
+        stubImage.widthAnchor.constraint(equalToConstant: 83).isActive = true
+        stubImage.heightAnchor.constraint(equalToConstant: 75).isActive = true
+        stubImage.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
+        stubImage.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+    }
     
     
     private func setupSingleImage() {
@@ -92,6 +92,7 @@ final class SingleImageViewController: UIViewController {
     }
     
     private func setupBackwardButton() {
+        backwardButton.accessibilityIdentifier = "BackwardButton"
         backwardButton.setImage(UIImage(resource: .backward), for: .normal)
         backwardButton.translatesAutoresizingMaskIntoConstraints = false
         backwardButton.addTarget(self, action: #selector(didTapBackwardButton), for: .touchUpInside)
